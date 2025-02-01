@@ -1,5 +1,6 @@
 from logger import Logger
 from cmdline_parser import CmdlineParser
+from sync import SyncManager
 
 
 def main():
@@ -7,6 +8,9 @@ def main():
     print((args.source, args.replica, args.interval, args.logfile))
 
     logger = Logger(args.logfile)
+
+    sync_manager = SyncManager(args.source, args.replica, logger, args.interval)
+    sync_manager.run_sync()
 
 
 if __name__ == "__main__":

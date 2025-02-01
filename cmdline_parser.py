@@ -24,10 +24,8 @@ class CmdlineParser:
         CmdlineParser.__validate_interval(args.interval)
         CmdlineParser.__validate_path_existence(args.source, "source")
         CmdlineParser.__validate_path_existence(args.replica, "replica")
-        CmdlineParser.__validate_path_existence(args.logfile, "logfile")
         CmdlineParser.__validate_permissions(args.source, "source")
         CmdlineParser.__validate_permissions(args.replica, "replica")
-        CmdlineParser.__validate_permissions(args.logfile, "logfile")
         CmdlineParser.__validate_logfile_lock(args.logfile)
 
     @staticmethod
