@@ -4,6 +4,7 @@ from pathlib import Path
 import os
 
 CHUNK_SIZE = 8192
+TASKS_PER_CORE = 2
 
 
 class SyncManager:
@@ -22,7 +23,7 @@ class SyncManager:
         self.logger = logger
         self.interval = interval
 
-        concurrent_tasks_optimum = os.cpu_count() * 2
+        concurrent_tasks_optimum = os.cpu_count() * TASKS_PER_CORE
         self.max_concurrent_tasks = concurrent_tasks_optimum
         self.semaphore = asyncio.Semaphore(concurrent_tasks_optimum)
 
@@ -40,7 +41,7 @@ class SyncManager:
             if is_file:
                 yield item
 
-    async def copy_file(self, source_file: Path, target_file: Path):
+    async def copy_file(self, source_file: Path, target_file: Path, source_file_stat):
         async with self.semaphore:
             try:
                 async with aiofiles.open(source_file, 'rb') as src_f:
@@ -50,7 +51,7 @@ class SyncManager:
                             if not chunk:
                                 break
                             await tgt_f.write(chunk)
-                os.utime(target_file, (source_file.stat().st_atime, source_file.stat().st_mtime))
+                os.utime(target_file, (source_file_stat.st_atime, source_file_stat.st_mtime))
                 self.logger.log_info(f"Copied {source_file} to {target_file}.")
             except Exception as e:
                 self.logger.log_error(f"Failed to copy {source_file} to {target_file}: {e}")
@@ -64,19 +65,20 @@ class SyncManager:
             replica_file.parent.mkdir(parents=True, exist_ok=True)
 
             try:
+                source_file_stat = source_file.stat()
                 if not await self.file_exists(replica_file):
-                    tasks.append(self.copy_file(source_file, replica_file))
+                    tasks.append(self.copy_file(source_file, replica_file, source_file_stat))
                 else:
-                    if source_file.stat().st_mtime != replica_file.stat().st_mtime or \
-                            source_file.stat().st_size != replica_file.stat().st_size:
-                            tasks.append(self.copy_file(source_file, replica_file))
+                    if source_file_stat.st_mtime != replica_file.stat().st_mtime or \
+                            source_file_stat.st_size != replica_file.stat().st_size:
+                            tasks.append(self.copy_file(source_file, replica_file, source_file_stat))
             except Exception as e:
                 self.logger.log_error(f"Error syncing file {source_file}: {e}")
 
         await asyncio.gather(*tasks)
 
     async def remove_files(self, source: Path, replica: Path):
-        for replica_file in replica.rglob('*'):
+        async for replica_file in self.iter_files(replica):
             relative_path = replica_file.relative_to(replica)
             source_file = source / relative_path
 

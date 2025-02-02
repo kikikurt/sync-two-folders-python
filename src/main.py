@@ -5,7 +5,6 @@ from sync import SyncManager
 
 def main():
     args = CmdlineParser.parse_args()
-    print((args.source, args.replica, args.interval, args.logfile))
 
     logger = Logger(args.logfile)
 
