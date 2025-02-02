@@ -3,7 +3,7 @@ from logging.handlers import RotatingFileHandler
 
 
 class Logger:
-    def __init__(self, logfile, max_log_size=10 * 1024 * 1024, backup_count=10):
+    def __init__(self, logfile: str, max_log_size: int = 10 * 1024 * 1024, backup_count: int = 10):
         """
         Logger with rotation
 
@@ -25,11 +25,11 @@ class Logger:
         self.logger.addHandler(console_handler)
         self.logger.addHandler(rotating_handler)
 
-    def log_info(self, message):
+    def log_info(self, message: str):
         self.logger.info(message)
 
-    def log_warning(self, message):
+    def log_warning(self, message: str):
         self.logger.warning(message)
 
-    def log_error(self, message):
+    def log_error(self, message: str):
         self.logger.error(message)

@@ -20,7 +20,7 @@ class CmdlineParser:
         return args
 
     @staticmethod
-    def __validate_args(args):
+    def __validate_args(args: argparse.Namespace):
         CmdlineParser.__validate_interval(args.interval)
         CmdlineParser.__validate_path_existence(args.source, "source")
         CmdlineParser.__validate_path_existence(args.replica, "replica")
@@ -29,7 +29,7 @@ class CmdlineParser:
         CmdlineParser.__validate_logfile_lock(args.logfile)
 
     @staticmethod
-    def __validate_interval(interval):
+    def __validate_interval(interval: int):
         try:
             interval = int(interval)
         except ValueError:
@@ -41,19 +41,19 @@ class CmdlineParser:
             raise argparse.ArgumentTypeError("Interval is too large and may cause overflow.")
 
     @staticmethod
-    def __validate_path_existence(path, name):
+    def __validate_path_existence(path: str, name: str):
         if not os.path.exists(path):
             raise FileNotFoundError(f"{name} path '{path}' does not exist.")
 
     @staticmethod
-    def __validate_permissions(path, name):
+    def __validate_permissions(path: str, name: str):
         if not os.access(path, os.R_OK):
             raise PermissionError(f"No read access to {name} path: {path}")
         if not os.access(path, os.W_OK):
             raise PermissionError(f"No write access to {name} path: {path}")
 
     @staticmethod
-    def __validate_logfile_lock(logfile):
+    def __validate_logfile_lock(logfile: str):
         try:
             with open(logfile, 'a') as log:
                 pass

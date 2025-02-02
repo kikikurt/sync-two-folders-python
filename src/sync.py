@@ -1,6 +1,7 @@
 import aiofiles
 import asyncio
 from pathlib import Path
+from logger import Logger
 import os
 
 CHUNK_SIZE = 8192
@@ -8,7 +9,7 @@ TASKS_PER_CORE = 2
 
 
 class SyncManager:
-    def __init__(self, source, replica, logger, interval):
+    def __init__(self, source: str, replica: str, logger: Logger, interval: int):
         """
         SyncManager
         Syncs files and directories on source and replica recursively
@@ -21,6 +22,7 @@ class SyncManager:
         self.source = Path(source)
         self.target = Path(replica)
         self.logger = logger
+        print(type(logger))
         self.interval = interval
 
         concurrent_tasks_optimum = os.cpu_count() * TASKS_PER_CORE
@@ -41,7 +43,7 @@ class SyncManager:
             if is_file:
                 yield item
 
-    async def copy_file(self, source_file: Path, target_file: Path, source_file_stat):
+    async def copy_file(self, source_file: Path, target_file: Path, source_file_stat: os.stat_result):
         async with self.semaphore:
             try:
                 async with aiofiles.open(source_file, 'rb') as src_f:
