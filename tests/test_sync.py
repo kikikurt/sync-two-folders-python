@@ -24,15 +24,15 @@ async def test_copy_file(temp_dirs, mock_logger):
     source, replica = temp_dirs
     source_file = source / "test.txt"
     replica_file = replica / "test.txt"
-
-    source_file.write_text("TEST MESSAGE | DATA FILLER")
+    expected_result = "TEST MESSAGE | DATA FILLER"
+    source_file.write_text(expected_result)
 
     sync_manager = SyncManager(source, replica, mock_logger, 10)
     source_file_stat = source_file.stat()
     await sync_manager.copy_file(source_file, replica_file, source_file_stat)
 
     assert replica_file.exists()
-    assert replica_file.read_text() == "TEST MESSAGE | DATA FILLER"
+    assert replica_file.read_text() == expected_result
     mock_logger.log_info.assert_called()
 
 
