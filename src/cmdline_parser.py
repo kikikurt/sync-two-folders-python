@@ -28,6 +28,7 @@ class CmdlineParser:
         CmdlineParser.__validate_permissions(args.replica, "replica")
         CmdlineParser.__validate_logfile_lock(args.logfile)
 
+
     @staticmethod
     def __validate_interval(interval: int):
         try:

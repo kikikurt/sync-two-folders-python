@@ -1,15 +1,15 @@
 import aiofiles
 import asyncio
 from pathlib import Path
-from logger import Logger
 import os
+import time
 
 CHUNK_SIZE = 8192
 TASKS_PER_CORE = 2
 
 
 class SyncManager:
-    def __init__(self, source: str, replica: str, logger: Logger, interval: int):
+    def __init__(self, source: str, replica: str, logger, interval: int):
         """
         SyncManager
         Syncs files and directories on source and replica recursively
@@ -22,12 +22,16 @@ class SyncManager:
         self.source = Path(source)
         self.target = Path(replica)
         self.logger = logger
-        print(type(logger))
         self.interval = interval
 
         concurrent_tasks_optimum = os.cpu_count() * TASKS_PER_CORE
         self.max_concurrent_tasks = concurrent_tasks_optimum
         self.semaphore = asyncio.Semaphore(concurrent_tasks_optimum)
+
+    def calculate_time_after_start(self, start_time: time, interval: int):
+        elapsed_time = time.time() - start_time
+        time_difference = interval - elapsed_time
+        return max(0, time_difference)
 
     async def file_exists(self, path: Path):
         try:
@@ -38,10 +42,9 @@ class SyncManager:
 
     async def iter_files(self, dir_path: Path):
         files = await asyncio.to_thread(list, dir_path.rglob('*'))
-        for item in files:
-            is_file = await asyncio.to_thread(item.is_file)
-            if is_file:
-                yield item
+        file_items = [item for item in files if await asyncio.to_thread(item.is_file)]
+        for item in file_items:
+            yield item
 
     async def copy_file(self, source_file: Path, target_file: Path, source_file_stat: os.stat_result):
         async with self.semaphore:
@@ -94,6 +97,7 @@ class SyncManager:
     async def sync_files(self, source: Path, replica: Path, interval: int):
         try:
             while True:
+                start_time = time.time()
                 self.logger.log_info(f"Syncing from {source} to {replica}...")
 
                 await self.copy_files(source, replica)
@@ -101,7 +105,7 @@ class SyncManager:
 
                 self.logger.log_info(f"Synced {source} to {replica}!")
 
-                await asyncio.sleep(interval)
+                await asyncio.sleep(self.calculate_time_after_start(start_time, interval))
         except asyncio.CancelledError:
             self.logger.log_info("Sync process interrupted by user.")
 
